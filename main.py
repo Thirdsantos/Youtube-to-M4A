@@ -4,6 +4,8 @@ from fastapi.templating import Jinja2Templates
 import yt_dlp
 import os
 import tempfile
+from yt_dlp.utils import DownloadError
+
 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
@@ -28,14 +30,14 @@ def download(url: str):
             filepath = ydl.prepare_filename(info)
 
     except DownloadError as e:
-        # Log the error or return a user-friendly response
+
         raise HTTPException(
             status_code=400,
             detail="Failed to download the video. It might be private, unavailable, or blocked."
         )
 
     except Exception as e:
-        # Catch any unexpected errors
+   
         raise HTTPException(
             status_code=500,
             detail=f"Unexpected error: {str(e)}"
