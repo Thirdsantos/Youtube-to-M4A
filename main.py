@@ -14,24 +14,39 @@ async def index(request: Request):
 
 @app.get("/download")
 def download(url: str):
-
     temp_dir = tempfile.gettempdir()
 
     ydl_opts = {
         "format": "bestaudio[ext=m4a]/bestaudio/best",
-        "outtmpl": os.path.join(temp_dir, "%(title)s.%(ext)s"),  # avoid downloads/
+        "outtmpl": os.path.join(temp_dir, "%(title)s.%(ext)s"),
         "quiet": True
     }
 
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        info = ydl.extract_info(url, download=True)
-        filepath = ydl.prepare_filename(info)
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=True)
+            filepath = ydl.prepare_filename(info)
 
+    except DownloadError as e:
+        # Log the error or return a user-friendly response
+        raise HTTPException(
+            status_code=400,
+            detail="Failed to download the video. It might be private, unavailable, or blocked."
+        )
+
+    except Exception as e:
+        # Catch any unexpected errors
+        raise HTTPException(
+            status_code=500,
+            detail=f"Unexpected error: {str(e)}"
+        )
 
     if not os.path.exists(filepath):
-        raise HTTPException(status_code=500, detail="Download failed. File not found.")
+        raise HTTPException(
+            status_code=500,
+            detail="Download failed. File not found on server."
+        )
 
-  
     return FileResponse(
         filepath,
         media_type="audio/mp4",
